@@ -95,9 +95,13 @@ export function tracksFromPage(pageUrl, html) {
   const info = Array.isArray(t.trackinfo) ? t.trackinfo : [];
   const rows = info
     .filter((ti) => ti && ti.title)
-    .map((ti) => {
+    .map((ti, idx) => {
       const slug = typeof ti.title_link === "string" ? ti.title_link : "";
-      const trackUrl = (slug ? origin + slug : pageUrl).toLowerCase().split("?")[0];
+      // Locked/preorder bonus tracks often have no title_link at all; fall back
+      // to a URL unique per track (not the shared album URL) so they don't
+      // collide and overwrite each other.
+      const base = slug ? origin + slug : `${pageUrl}#locked-${ti.track_num ?? idx + 1}`;
+      const trackUrl = base.toLowerCase().split("?")[0];
       const stream = normStream(ti.file && (ti.file["mp3-128"] || ti.file["mp3-v0"]));
       return {
         bandcamp_track_url: trackUrl,
@@ -112,6 +116,7 @@ export function tracksFromPage(pageUrl, html) {
         released_at: releaseDate,
         is_clip_only: !stream || ti.is_capped === true,
         stream_url: stream,
+        track_num: typeof ti.track_num === "number" ? ti.track_num : null,
       };
     });
 
@@ -128,6 +133,7 @@ export function tracksFromPage(pageUrl, html) {
       released_at: releaseDate,
       is_clip_only: true,
       stream_url: null,
+      track_num: 1,
     }];
   }
   return rows;

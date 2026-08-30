@@ -11,10 +11,9 @@ const loadingEl = $("#loading");
 const audio = $("#audio");
 
 const TABS = {
-  new:    { q: "rating=eq.unrated&order=created_at.desc,id.asc",   empty: "No new releases. All caught up." },
-  liked:  { q: "rating=eq.liked&order=updated_at.desc,id.asc",     empty: "Nothing liked yet." },
-  later:  { q: "download_later=is.true&order=updated_at.desc,id.asc", empty: "Download-later list is empty." },
-  hidden: { q: "rating=eq.hidden&order=updated_at.desc,id.asc",     empty: "Nothing hidden." },
+  new:    { q: "rating=eq.unrated", empty: "No new releases. All caught up." },
+  liked:  { q: "rating=eq.liked",   empty: "Nothing liked yet." },
+  hidden: { q: "rating=eq.hidden",  empty: "Nothing hidden." },
 };
 let tab = "new";
 let rows = [];
@@ -27,12 +26,33 @@ async function api(path, opts = {}) {
   return r.status === 204 ? null : r.json();
 }
 
+function releaseKey(t) { return t.bandcamp_release_url || t.bandcamp_track_url; }
+
+// Recency-ordered, but tracks from the same release stay grouped and in track order.
+function groupByRelease(list) {
+  const order = [];
+  const groups = new Map();
+  for (const t of list) {
+    const k = releaseKey(t);
+    if (!groups.has(k)) { groups.set(k, []); order.push(k); }
+    groups.get(k).push(t);
+  }
+  const out = [];
+  for (const k of order) {
+    const g = groups.get(k);
+    g.sort((a, b) => (a.track_num ?? 999) - (b.track_num ?? 999) || a.title.localeCompare(b.title));
+    out.push(...g);
+  }
+  return out;
+}
+
 async function load() {
   loadingEl.hidden = false;
   emptyEl.hidden = true;
   listEl.innerHTML = "";
   try {
-    rows = await api(`/tracks?select=*&${TABS[tab].q}&limit=500`);
+    const raw = await api(`/tracks?select=*&${TABS[tab].q}&order=released_at.desc.nullslast,created_at.desc&limit=1000`);
+    rows = groupByRelease(raw);
   } catch (e) {
     loadingEl.textContent = "Failed to load: " + e.message;
     return;
@@ -57,8 +77,8 @@ function fmtDate(d) {
 
 function render() {
   listEl.innerHTML = "";
-  $("#laterbar").hidden = tab !== "later" || rows.length === 0;
-  if (tab === "later") $("#latercount").textContent = `${rows.length} track${rows.length === 1 ? "" : "s"} to buy`;
+  $("#laterbar").hidden = tab !== "liked" || rows.length === 0;
+  if (tab === "liked") $("#latercount").textContent = `${rows.length} liked track${rows.length === 1 ? "" : "s"}`;
 
   if (!rows.length) {
     emptyEl.textContent = TABS[tab].empty;
@@ -67,14 +87,18 @@ function render() {
   }
   emptyEl.hidden = true;
 
+  let lastKey = null;
   for (const t of rows) {
+    const key = releaseKey(t);
+    const isNewGroup = key !== lastKey && lastKey !== null;
     const li = document.createElement("li");
-    li.className = "row" + (t.id === current ? " playing" : "");
+    li.className = "row" + (t.id === current ? " playing" : "") + (isNewGroup ? " newgroup" : "");
+    lastKey = key;
     li.dataset.id = t.id;
 
     const art = document.createElement("img");
     art.loading = "lazy";
-    art.src = artAt(t.artwork_url, 9); // ~210px
+    art.src = artAt(t.artwork_url, 9);
     art.alt = "";
 
     const info = document.createElement("div");
@@ -90,10 +114,8 @@ function render() {
     actions.className = "actions";
     actions.append(
       btn(t.id === current && !audio.paused ? "⏸" : "▶", "Play / pause", () => playRow(t)),
-      btn("♥", "Like → download later", () => toggleLike(t), t.rating === "liked" ? "on-like" : ""),
-      tab === "later"
-        ? btn("✓", "Got it — remove from download later", () => clearLater(t))
-        : btn("🚫", "Hide", () => toggleHide(t), t.rating === "hidden" ? "on-later" : ""),
+      btn("♥", "Like", () => toggleLike(t), t.rating === "liked" ? "on-like" : ""),
+      btn("🚫", "Hide", () => toggleHide(t), t.rating === "hidden" ? "on-later" : ""),
       link("↗", "Open on Bandcamp", t.bandcamp_release_url || t.bandcamp_track_url),
     );
 
@@ -126,27 +148,21 @@ function dropRow(id) {
   const el = listEl.querySelector(`[data-id="${id}"]`);
   if (el) el.remove();
   if (!rows.length) render();
-  if (tab === "later") $("#latercount").textContent = `${rows.length} track${rows.length === 1 ? "" : "s"} to buy`;
+  if (tab === "liked") $("#latercount").textContent = `${rows.length} liked track${rows.length === 1 ? "" : "s"}`;
 }
 
 async function toggleLike(t) {
   const like = t.rating !== "liked";
-  await patch(t.id, like ? { rating: "liked", download_later: true } : { rating: "unrated", download_later: false });
+  await patch(t.id, { rating: like ? "liked" : "unrated" });
   t.rating = like ? "liked" : "unrated";
-  t.download_later = like;
-  if ((tab === "new" && like) || (tab === "liked" && !like) || (tab === "hidden")) dropRow(t.id);
+  if ((tab === "new" && like) || (tab === "liked" && !like)) dropRow(t.id);
   else render();
 }
 async function toggleHide(t) {
   const hide = t.rating !== "hidden";
-  await patch(t.id, hide ? { rating: "hidden", download_later: false } : { rating: "unrated" });
+  await patch(t.id, { rating: hide ? "hidden" : "unrated" });
   t.rating = hide ? "hidden" : "unrated";
   if (hide) dropRow(t.id); else render();
-}
-async function clearLater(t) {
-  await patch(t.id, { download_later: false });
-  t.download_later = false;
-  dropRow(t.id);
 }
 
 // ---------- playback ----------
@@ -192,7 +208,7 @@ audio.onended = () => {
 $("#p-seek").oninput = () => { if (audio.duration) audio.currentTime = (Number($("#p-seek").value) / 1000) * audio.duration; };
 function fmtTime(s) { s = Math.floor(s || 0); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; }
 
-// ---------- later bar ----------
+// ---------- liked-tab bulk actions ----------
 $("#openall").onclick = () => {
   const urls = [...new Set(rows.map((r) => r.bandcamp_release_url || r.bandcamp_track_url).filter(Boolean))];
   urls.slice(0, 12).forEach((u, i) => setTimeout(() => window.open(u, "_blank", "noopener"), i * 250));
@@ -205,7 +221,7 @@ $("#copylinks").onclick = async () => {
   setTimeout(() => ($("#copylinks").textContent = "Copy links"), 1500);
 };
 
-// ---------- tabs + sync ----------
+// ---------- tabs + header stats ----------
 $("#tabs").onclick = (e) => {
   const b = e.target.closest("button[data-tab]");
   if (!b) return;
@@ -213,6 +229,14 @@ $("#tabs").onclick = (e) => {
   tab = b.dataset.tab;
   load();
 };
+
+async function showStats() {
+  try {
+    const all = await api(`/tracks?select=bandcamp_release_url,bandcamp_track_url`);
+    const releases = new Set(all.map((r) => r.bandcamp_release_url || r.bandcamp_track_url));
+    $("#stats").textContent = `${all.length} track${all.length === 1 ? "" : "s"} from ${releases.size} release${releases.size === 1 ? "" : "s"}`;
+  } catch { /* ignore */ }
+}
 
 async function showSync() {
   try {
@@ -225,4 +249,5 @@ async function showSync() {
 }
 
 load();
+showStats();
 showSync();
