@@ -11,10 +11,10 @@ const loadingEl = $("#loading");
 const audio = $("#audio");
 
 const TABS = {
-  new:    { q: "rating=eq.unrated&order=created_at.desc",   empty: "No new releases. All caught up." },
-  liked:  { q: "rating=eq.liked&order=updated_at.desc",     empty: "Nothing liked yet." },
-  later:  { q: "download_later=is.true&order=updated_at.desc", empty: "Download-later list is empty." },
-  hidden: { q: "rating=eq.hidden&order=updated_at.desc",     empty: "Nothing hidden." },
+  new:    { q: "rating=eq.unrated&order=created_at.desc,id.asc",   empty: "No new releases. All caught up." },
+  liked:  { q: "rating=eq.liked&order=updated_at.desc,id.asc",     empty: "Nothing liked yet." },
+  later:  { q: "download_later=is.true&order=updated_at.desc,id.asc", empty: "Download-later list is empty." },
+  hidden: { q: "rating=eq.hidden&order=updated_at.desc,id.asc",     empty: "Nothing hidden." },
 };
 let tab = "new";
 let rows = [];
@@ -74,7 +74,7 @@ function render() {
 
     const art = document.createElement("img");
     art.loading = "lazy";
-    art.src = t.artwork_url || "";
+    art.src = artAt(t.artwork_url, 9); // ~210px
     art.alt = "";
 
     const info = document.createElement("div");
@@ -117,6 +117,8 @@ function link(label, title, href) {
   return a;
 }
 function esc(s) { return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+// Bandcamp art comes in sized variants; _10 is ~1200px. Downscale for thumbs.
+function artAt(url, size) { return url ? url.replace(/_\d+\.jpg$/i, `_${size}.jpg`) : ""; }
 
 // ---------- actions ----------
 function dropRow(id) {
@@ -153,7 +155,7 @@ async function playRow(t) {
   current = t.id;
   render();
   $("#player").hidden = false;
-  $("#p-art").src = t.artwork_url || "";
+  $("#p-art").src = artAt(t.artwork_url, 16); // ~700px
   $("#p-title").textContent = t.title;
   $("#p-artist").textContent = t.artist || "";
   $("#p-toggle").textContent = "…";
