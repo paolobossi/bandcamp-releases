@@ -1,0 +1,38 @@
+name: bandcamp ingest
+
+on:
+  schedule:
+    - cron: "20 6 * * *" # 06:20 UTC daily
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Parse only, write nothing"
+        type: boolean
+        default: false
+      max_emails:
+        description: "Max emails to process"
+        default: "40"
+
+concurrency:
+  group: bandcamp-ingest
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run ingester
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          MAX_EMAILS: ${{ inputs.max_emails || '40' }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+        run: node ingest/run.mjs

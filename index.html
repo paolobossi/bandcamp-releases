@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Bandcamp Releases</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%A7%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>🎧 Bandcamp Releases</h1>
+      <div class="sync" id="sync">&nbsp;</div>
+    </div>
+    <nav class="tabs wrap" id="tabs">
+      <button data-tab="new" class="active">New</button>
+      <button data-tab="liked">Liked</button>
+      <button data-tab="later">Download later</button>
+      <button data-tab="hidden">Hidden</button>
+    </nav>
+  </header>
+
+  <main class="wrap" id="main">
+    <div class="bar" id="laterbar" hidden>
+      <span id="latercount"></span>
+      <button id="openall">Open all buy pages</button>
+      <button id="copylinks" class="ghost">Copy links</button>
+    </div>
+    <ul id="list" class="list"></ul>
+    <p id="empty" class="empty" hidden></p>
+    <p id="loading" class="empty">Loading…</p>
+  </main>
+
+  <footer class="player" id="player" hidden>
+    <img id="p-art" alt="" />
+    <div class="p-meta">
+      <div id="p-title">—</div>
+      <div id="p-artist" class="muted"></div>
+    </div>
+    <button id="p-toggle" class="round">▶</button>
+    <input type="range" id="p-seek" value="0" min="0" max="1000" step="1" />
+    <span id="p-time" class="muted mono">0:00</span>
+    <audio id="audio" preload="none"></audio>
+  </footer>
+
+  <script src="./config.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
