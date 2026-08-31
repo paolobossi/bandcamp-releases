@@ -1,4 +1,4 @@
-name: bandcamp ingest
+name: bandcamp-ingest
 
 on:
   schedule:
