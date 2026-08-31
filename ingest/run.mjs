@@ -111,7 +111,8 @@ async function sb(path, init = {}) {
     },
   });
   if (!r.ok) throw new Error(`supabase ${path} ${r.status}: ${await r.text()}`);
-  return r.status === 204 ? null : r.json();
+  const text = await r.text();
+  return text ? JSON.parse(text) : null;
 }
 
 async function upsertTracks(rows) {
