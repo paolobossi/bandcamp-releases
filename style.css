@@ -27,7 +27,7 @@ header {
   background: linear-gradient(var(--bg) 70%, transparent);
   padding-top: 14px;
 }
-header .wrap { display: flex; align-items: baseline; justify-content: space-between; }
+header .title-row { display: flex; align-items: baseline; justify-content: space-between; }
 h1 { font-size: 18px; font-weight: 650; letter-spacing: .2px; }
 .sync { font-size: 12px; color: var(--muted); }
 
@@ -63,7 +63,19 @@ h1 { font-size: 18px; font-weight: 650; letter-spacing: .2px; }
 .row:hover { background: var(--bg-elev); }
 .row.newgroup { margin-top: 8px; padding-top: 15px; border-top: 1px solid var(--border); }
 .row.playing { background: var(--bg-hover); }
-.row img { width: 48px; height: 48px; border-radius: 6px; object-fit: cover; background: var(--bg-elev); }
+.art-wrap { position: relative; width: 48px; height: 48px; flex: none; }
+.art-wrap img { width: 48px; height: 48px; border-radius: 6px; object-fit: cover; background: var(--bg-elev); display: block; }
+.art-wrap .play-overlay {
+  position: absolute; inset: 0; margin: 0; border: 0; border-radius: 6px;
+  display: grid; place-items: center; cursor: pointer;
+  background: rgba(0, 0, 0, .35); color: #fff; font-size: 15px;
+  opacity: 0; transition: opacity .12s;
+}
+.art-wrap:hover .play-overlay,
+.row.playing .art-wrap .play-overlay { opacity: 1; }
+@media (hover: none) {
+  .art-wrap .play-overlay { opacity: .85; background: rgba(0, 0, 0, .45); }
+}
 .info { min-width: 0; }
 .info .t { font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .info .s { font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -95,6 +107,11 @@ h1 { font-size: 18px; font-weight: 650; letter-spacing: .2px; }
   width: 40px; height: 40px; flex: none; border-radius: 999px;
   background: var(--accent); color: #05202b; border: 0; font-size: 15px; cursor: pointer;
 }
+.round.small {
+  width: 30px; height: 30px; font-size: 12px;
+  background: transparent; color: var(--muted); border: 1px solid var(--border);
+}
+.round.small:hover { color: var(--text); background: var(--bg-hover); }
 #p-seek { flex: 1; accent-color: var(--accent); }
 #p-time { font-size: 12px; flex: none; width: 40px; text-align: right; }
 

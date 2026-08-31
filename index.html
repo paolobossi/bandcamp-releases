@@ -9,7 +9,7 @@
 </head>
 <body>
   <header>
-    <div class="wrap">
+    <div class="wrap title-row">
       <h1>🎧 Bandcamp Releases</h1>
       <div class="sync" id="sync">&nbsp;</div>
     </div>
@@ -38,7 +38,9 @@
       <div id="p-title">—</div>
       <div id="p-artist" class="muted"></div>
     </div>
+    <button id="p-prev" class="round small" title="Previous">⏮</button>
     <button id="p-toggle" class="round">▶</button>
+    <button id="p-next" class="round small" title="Next">⏭</button>
     <input type="range" id="p-seek" value="0" min="0" max="1000" step="1" />
     <span id="p-time" class="muted mono">0:00</span>
     <audio id="audio" preload="none"></audio>

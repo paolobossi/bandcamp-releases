@@ -51,7 +51,7 @@ async function load() {
   emptyEl.hidden = true;
   listEl.innerHTML = "";
   try {
-    const raw = await api(`/tracks?select=*&${TABS[tab].q}&order=released_at.desc.nullslast,created_at.desc&limit=1000`);
+    const raw = await api(`/tracks?select=*&${TABS[tab].q}&order=created_at.desc&limit=1000`);
     rows = groupByRelease(raw);
   } catch (e) {
     loadingEl.textContent = "Failed to load: " + e.message;
@@ -96,10 +96,15 @@ function render() {
     lastKey = key;
     li.dataset.id = t.id;
 
+    const artWrap = document.createElement("div");
+    artWrap.className = "art-wrap";
     const art = document.createElement("img");
     art.loading = "lazy";
     art.src = artAt(t.artwork_url, 9);
     art.alt = "";
+    const playOverlay = btn(t.id === current && !audio.paused ? "⏸" : "▶", "Play / pause", () => playRow(t));
+    playOverlay.className = "play-overlay";
+    artWrap.append(art, playOverlay);
 
     const info = document.createElement("div");
     info.className = "info";
@@ -113,13 +118,12 @@ function render() {
     const actions = document.createElement("div");
     actions.className = "actions";
     actions.append(
-      btn(t.id === current && !audio.paused ? "⏸" : "▶", "Play / pause", () => playRow(t)),
       btn("♥", "Like", () => toggleLike(t), t.rating === "liked" ? "on-like" : ""),
       btn("🚫", "Hide", () => toggleHide(t), t.rating === "hidden" ? "on-later" : ""),
       link("↗", "Open on Bandcamp", t.bandcamp_release_url || t.bandcamp_track_url),
     );
 
-    li.append(art, info, actions);
+    li.append(artWrap, info, actions);
     listEl.append(li);
   }
 }
@@ -190,10 +194,15 @@ async function playRow(t) {
   }
 }
 
+function currentIndex() { return rows.findIndex((r) => r.id === current); }
+function playAt(i) { if (rows[i]) playRow(rows[i]); }
+
 $("#p-toggle").onclick = () => (audio.paused ? audio.play() : audio.pause());
+$("#p-prev").onclick = () => playAt(currentIndex() - 1);
+$("#p-next").onclick = () => playAt(currentIndex() + 1);
 audio.onplay = audio.onpause = () => {
   $("#p-toggle").textContent = audio.paused ? "▶" : "⏸";
-  const el = listEl.querySelector(".row.playing .actions button");
+  const el = listEl.querySelector(".row.playing .play-overlay");
   if (el) el.textContent = audio.paused ? "▶" : "⏸";
 };
 audio.ontimeupdate = () => {
@@ -201,10 +210,7 @@ audio.ontimeupdate = () => {
   $("#p-seek").value = String(Math.round((audio.currentTime / audio.duration) * 1000));
   $("#p-time").textContent = fmtTime(audio.currentTime);
 };
-audio.onended = () => {
-  const i = rows.findIndex((r) => r.id === current);
-  if (i > -1 && rows[i + 1]) playRow(rows[i + 1]);
-};
+audio.onended = () => playAt(currentIndex() + 1);
 $("#p-seek").oninput = () => { if (audio.duration) audio.currentTime = (Number($("#p-seek").value) / 1000) * audio.duration; };
 function fmtTime(s) { s = Math.floor(s || 0); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; }
 
