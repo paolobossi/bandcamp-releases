@@ -100,14 +100,20 @@ h1 { font-size: 18px; font-weight: 650; letter-spacing: .2px; display: flex; ali
 
 .player {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
-  display: flex; align-items: center; gap: 12px;
   padding: 10px 16px; padding-bottom: calc(10px + env(safe-area-inset-bottom));
   background: var(--bg-elev); border-top: 1px solid var(--border);
 }
-.player img { width: 44px; height: 44px; border-radius: 6px; object-fit: cover; background: var(--bg); }
-.p-meta { min-width: 0; width: 160px; }
+.p-top {
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  align-items: center; gap: 12px;
+}
+.p-track { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.player img { width: 44px; height: 44px; border-radius: 6px; object-fit: cover; background: var(--bg); flex: none; }
+.p-meta { min-width: 0; }
 #p-title { font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #p-artist { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.p-controls { display: flex; align-items: center; gap: 6px; }
+.p-spacer { min-width: 0; }
 .round {
   width: 40px; height: 40px; flex: none; border-radius: 999px;
   background: var(--accent); color: #05202b; border: 0; cursor: pointer;
@@ -120,14 +126,13 @@ h1 { font-size: 18px; font-weight: 650; letter-spacing: .2px; display: flex; ali
 }
 .round.small svg { width: 14px; height: 14px; }
 .round.small:hover { color: var(--text); background: var(--bg-hover); }
+.p-seekrow { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
 #p-seek { flex: 1; accent-color: var(--accent); }
 #p-time { font-size: 12px; flex: none; width: 40px; text-align: right; }
-.p-actions { display: flex; gap: 4px; flex: none; }
 .spinner { animation: bc-spin .8s linear infinite; }
 @keyframes bc-spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 640px) {
-  .p-meta { width: 80px; }
+  .p-meta { max-width: 90px; }
   #p-time { display: none; }
-  .p-actions { display: none; }
 }

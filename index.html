@@ -28,20 +28,26 @@
   </main>
 
   <footer class="player" id="player" hidden>
-    <img id="p-art" alt="" />
-    <div class="p-meta">
-      <div id="p-title">—</div>
-      <div id="p-artist" class="muted"></div>
+    <div class="p-top">
+      <div class="p-track">
+        <img id="p-art" alt="" />
+        <div class="p-meta">
+          <div id="p-title">—</div>
+          <div id="p-artist" class="muted"></div>
+        </div>
+      </div>
+      <div class="p-controls">
+        <button id="p-like" class="round small" title="Like"></button>
+        <button id="p-prev" class="round small" title="Previous"></button>
+        <button id="p-toggle" class="round" title="Play / pause"></button>
+        <button id="p-next" class="round small" title="Next"></button>
+        <button id="p-hide" class="round small" title="Hide"></button>
+      </div>
+      <div class="p-spacer"></div>
     </div>
-    <button id="p-prev" class="round small" title="Previous"></button>
-    <button id="p-toggle" class="round" title="Play / pause"></button>
-    <button id="p-next" class="round small" title="Next"></button>
-    <input type="range" id="p-seek" value="0" min="0" max="1000" step="1" />
-    <span id="p-time" class="muted mono">0:00</span>
-    <div class="p-actions">
-      <button id="p-like" class="round small" title="Like"></button>
-      <button id="p-hide" class="round small" title="Hide"></button>
-      <a id="p-link" class="round small icon-link" title="Open on Bandcamp" href="#" target="_blank" rel="noopener"></a>
+    <div class="p-seekrow">
+      <input type="range" id="p-seek" value="0" min="0" max="1000" step="1" />
+      <span id="p-time" class="muted mono">0:00</span>
     </div>
     <audio id="audio" preload="none"></audio>
   </footer>

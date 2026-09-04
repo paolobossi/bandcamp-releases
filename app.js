@@ -253,7 +253,6 @@ function updatePlayerActions() {
   likeBtn.innerHTML = liked ? ICON_HEART_FILLED : ICON_HEART_OUT;
   likeBtn.classList.toggle("on-like", liked);
   hideBtn.classList.toggle("on-later", hidden);
-  $("#p-link").href = currentTrack.bandcamp_release_url || currentTrack.bandcamp_track_url || "#";
 }
 
 $("#p-prev").innerHTML = ICON_PREV;
@@ -261,7 +260,6 @@ $("#p-next").innerHTML = ICON_NEXT;
 $("#p-toggle").innerHTML = ICON_PLAY;
 $("#p-like").innerHTML = ICON_HEART_OUT;
 $("#p-hide").innerHTML = ICON_HIDE;
-$("#p-link").innerHTML = ICON_LINK;
 
 $("#p-toggle").onclick = () => (audio.paused ? audio.play() : audio.pause());
 $("#p-prev").onclick = () => playAt(currentIndex() - 1);
