@@ -41,35 +41,25 @@ h1 { font-size: 18px; font-weight: 650; letter-spacing: .2px; display: flex; ali
 }
 .tabs button.active { color: var(--text); border-color: var(--accent); background: var(--bg-hover); }
 
-.bar {
-  display: flex; align-items: center; gap: 10px;
-  margin: 14px 0 6px; padding: 10px 12px;
-  background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius);
-  font-size: 13px;
-}
-.bar button {
-  margin-left: auto; background: var(--accent); color: #05202b; border: 0;
-  border-radius: 8px; padding: 7px 12px; font-weight: 600; cursor: pointer;
-}
-.bar button.ghost { margin-left: 0; background: transparent; color: var(--muted); border: 1px solid var(--border); }
-
 .list { list-style: none; margin-top: 10px; }
 
-.group-header { list-style: none; }
-.gh-title {
-  all: unset; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between;
-  gap: 8px; width: 100%; margin-top: 14px; padding: 8px 8px 6px;
-  color: var(--muted); font-size: 12px; font-weight: 650; letter-spacing: .2px;
-  cursor: pointer; border-radius: 8px; border-top: 1px solid var(--border);
+.group-header {
+  list-style: none; display: grid;
+  grid-template-columns: 48px 1fr 106px;
+  gap: 12px; align-items: center;
+  margin-top: 14px; padding: 15px 8px 8px;
+  border-top: 1px solid var(--border); border-radius: 10px;
 }
-.gh-title:hover { color: var(--text); background: var(--bg-elev); }
-.gh-title span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gh-title svg { flex: none; width: 14px; height: 14px; opacity: .55; }
-.gh-title:hover svg { opacity: 1; }
+.group-header:hover { background: var(--bg-elev); }
+.gh-title {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--muted); font-size: 12px; font-weight: 650; letter-spacing: .2px;
+}
+.group-header:hover .gh-title { color: var(--text); }
 
 .row {
   display: grid;
-  grid-template-columns: 48px 1fr auto;
+  grid-template-columns: 48px 1fr 106px;
   gap: 12px; align-items: center;
   padding: 9px 8px; border-radius: 10px;
 }

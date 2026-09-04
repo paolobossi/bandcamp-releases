@@ -90,8 +90,6 @@ function fmtDate(d) {
 
 function render() {
   listEl.innerHTML = "";
-  $("#laterbar").hidden = tab !== "liked" || rows.length === 0;
-  if (tab === "liked") $("#latercount").textContent = `${rows.length} liked track${rows.length === 1 ? "" : "s"}`;
 
   if (!rows.length) {
     emptyEl.textContent = TABS[tab].empty;
@@ -113,13 +111,17 @@ function render() {
       if (groupSize.get(key) > 1) {
         const header = document.createElement("li");
         header.className = "group-header";
-        const gtitle = document.createElement("button");
+        const spacer = document.createElement("div");
+        const gtitle = document.createElement("div");
         gtitle.className = "gh-title";
-        gtitle.title = "Hide this entire release";
-        gtitle.innerHTML =
-          `<span>${esc(t.artist)}${t.album ? " · " + esc(t.album) : ""}</span>` + ICON_HIDE;
-        gtitle.onclick = () => hideRelease(key);
-        header.append(gtitle);
+        gtitle.textContent = `${t.artist}${t.album ? " · " + t.album : ""}`;
+        const gactions = document.createElement("div");
+        gactions.className = "actions";
+        gactions.append(
+          btn(ICON_HEART_OUT, "Like this entire release", () => likeRelease(key)),
+          btn(ICON_HIDE, "Hide this entire release", () => hideRelease(key)),
+        );
+        header.append(spacer, gtitle, gactions);
         listEl.append(header);
       }
     }
@@ -196,20 +198,22 @@ async function toggleHide(t) {
   render();
   updatePlayerActions();
 }
-async function hideRelease(key) {
+async function patchRelease(key, rating) {
   const group = rows.filter((r) => releaseKey(r) === key);
   if (!group.length) return;
   const col = group[0].bandcamp_release_url === key ? "bandcamp_release_url" : "bandcamp_track_url";
   await api(`/tracks?${col}=eq.${encodeURIComponent(key)}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
-    body: JSON.stringify({ rating: "hidden" }),
+    body: JSON.stringify({ rating }),
   });
-  for (const t of group) t.rating = "hidden";
-  rows = rows.filter((r) => releaseKey(r) !== key);
+  for (const t of group) t.rating = rating;
+  if (tab !== rating) rows = rows.filter((r) => releaseKey(r) !== key);
   render();
   updatePlayerActions();
 }
+function hideRelease(key) { return patchRelease(key, "hidden"); }
+function likeRelease(key) { return patchRelease(key, "liked"); }
 
 // ---------- playback ----------
 async function playRow(t) {
@@ -277,19 +281,6 @@ audio.ontimeupdate = () => {
 audio.onended = () => playAt(currentIndex() + 1);
 $("#p-seek").oninput = () => { if (audio.duration) audio.currentTime = (Number($("#p-seek").value) / 1000) * audio.duration; };
 function fmtTime(s) { s = Math.floor(s || 0); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; }
-
-// ---------- liked-tab bulk actions ----------
-$("#openall").onclick = () => {
-  const urls = [...new Set(rows.map((r) => r.bandcamp_release_url || r.bandcamp_track_url).filter(Boolean))];
-  urls.slice(0, 12).forEach((u, i) => setTimeout(() => window.open(u, "_blank", "noopener"), i * 250));
-  if (urls.length > 12) alert(`Opened first 12 of ${urls.length}. Use "Copy links" for the rest.`);
-};
-$("#copylinks").onclick = async () => {
-  const urls = [...new Set(rows.map((r) => r.bandcamp_release_url || r.bandcamp_track_url).filter(Boolean))];
-  await navigator.clipboard.writeText(urls.join("\n"));
-  $("#copylinks").textContent = "Copied";
-  setTimeout(() => ($("#copylinks").textContent = "Copy links"), 1500);
-};
 
 // ---------- tabs + header stats ----------
 $("#tabs").onclick = (e) => {
