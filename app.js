@@ -10,6 +10,17 @@ const emptyEl = $("#empty");
 const loadingEl = $("#loading");
 const audio = $("#audio");
 
+// ---------- icons (no emoji, inline SVG only) ----------
+const ICON_PLAY = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
+const ICON_PAUSE = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zm6 0h4v14h-4z"/></svg>`;
+const ICON_PREV = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>`;
+const ICON_NEXT = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>`;
+const ICON_HEART_FILLED = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+const ICON_HEART_OUT = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/></svg>`;
+const ICON_HIDE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+const ICON_LINK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+const ICON_SPINNER = `<svg viewBox="0 0 24 24" class="spinner" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="9" stroke-dasharray="40 100"/></svg>`;
+
 const TABS = {
   new:    { q: "rating=eq.unrated", empty: "No new releases. All caught up." },
   liked:  { q: "rating=eq.liked",   empty: "Nothing liked yet." },
@@ -18,12 +29,14 @@ const TABS = {
 let tab = "new";
 let rows = [];
 let current = null; // currently loaded track id
+let currentTrack = null; // currently loaded track object
 
 // ---------- data ----------
 async function api(path, opts = {}) {
   const r = await fetch(`${REST}${path}`, { ...opts, headers: { ...H, ...(opts.headers || {}) } });
   if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
-  return r.status === 204 ? null : r.json();
+  const text = await r.text();
+  return text ? JSON.parse(text) : null;
 }
 
 function releaseKey(t) { return t.bandcamp_release_url || t.bandcamp_track_url; }
@@ -87,13 +100,34 @@ function render() {
   }
   emptyEl.hidden = true;
 
+  const groupSize = new Map();
+  for (const t of rows) { const k = releaseKey(t); groupSize.set(k, (groupSize.get(k) || 0) + 1); }
+
   let lastKey = null;
+  let firstRow = true;
   for (const t of rows) {
     const key = releaseKey(t);
-    const isNewGroup = key !== lastKey && lastKey !== null;
+    const isNewGroup = key !== lastKey;
+    if (isNewGroup) {
+      lastKey = key;
+      if (groupSize.get(key) > 1) {
+        const header = document.createElement("li");
+        header.className = "group-header";
+        const gtitle = document.createElement("button");
+        gtitle.className = "gh-title";
+        gtitle.title = "Hide this entire release";
+        gtitle.innerHTML =
+          `<span>${esc(t.artist)}${t.album ? " · " + esc(t.album) : ""}</span>` + ICON_HIDE;
+        gtitle.onclick = () => hideRelease(key);
+        header.append(gtitle);
+        listEl.append(header);
+      }
+    }
+
     const li = document.createElement("li");
-    li.className = "row" + (t.id === current ? " playing" : "") + (isNewGroup ? " newgroup" : "");
-    lastKey = key;
+    const needsBorder = isNewGroup && !firstRow && groupSize.get(key) === 1;
+    li.className = "row" + (t.id === current ? " playing" : "") + (needsBorder ? " newgroup" : "");
+    firstRow = false;
     li.dataset.id = t.id;
 
     const artWrap = document.createElement("div");
@@ -102,7 +136,7 @@ function render() {
     art.loading = "lazy";
     art.src = artAt(t.artwork_url, 9);
     art.alt = "";
-    const playOverlay = btn(t.id === current && !audio.paused ? "⏸" : "▶", "Play / pause", () => playRow(t));
+    const playOverlay = btn(t.id === current && !audio.paused ? ICON_PAUSE : ICON_PLAY, "Play / pause", () => playRow(t));
     playOverlay.className = "play-overlay";
     artWrap.append(art, playOverlay);
 
@@ -118,9 +152,9 @@ function render() {
     const actions = document.createElement("div");
     actions.className = "actions";
     actions.append(
-      btn("♥", "Like", () => toggleLike(t), t.rating === "liked" ? "on-like" : ""),
-      btn("🚫", "Hide", () => toggleHide(t), t.rating === "hidden" ? "on-later" : ""),
-      link("↗", "Open on Bandcamp", t.bandcamp_release_url || t.bandcamp_track_url),
+      btn(t.rating === "liked" ? ICON_HEART_FILLED : ICON_HEART_OUT, "Like", () => toggleLike(t), t.rating === "liked" ? "on-like" : ""),
+      btn(ICON_HIDE, "Hide", () => toggleHide(t), t.rating === "hidden" ? "on-later" : ""),
+      link(ICON_LINK, "Open on Bandcamp", t.bandcamp_release_url || t.bandcamp_track_url),
     );
 
     li.append(artWrap, info, actions);
@@ -128,17 +162,16 @@ function render() {
   }
 }
 
-function btn(label, title, onclick, cls = "") {
+function btn(html, title, onclick, cls = "") {
   const b = document.createElement("button");
-  b.textContent = label; b.title = title; if (cls) b.className = cls;
+  b.innerHTML = html; b.title = title; if (cls) b.className = cls;
   b.onclick = (e) => { e.stopPropagation(); onclick(); };
   return b;
 }
-function link(label, title, href) {
+function link(html, title, href) {
   const a = document.createElement("a");
-  a.textContent = label; a.title = title; a.href = href || "#";
-  a.target = "_blank"; a.rel = "noopener";
-  a.style.cssText = "width:34px;height:34px;display:grid;place-items:center;color:var(--muted);text-decoration:none;border-radius:8px";
+  a.innerHTML = html; a.title = title; a.href = href || "#";
+  a.target = "_blank"; a.rel = "noopener"; a.className = "icon-link";
   a.onclick = (e) => e.stopPropagation();
   return a;
 }
@@ -147,49 +180,60 @@ function esc(s) { return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp
 function artAt(url, size) { return url ? url.replace(/_\d+\.jpg$/i, `_${size}.jpg`) : ""; }
 
 // ---------- actions ----------
-function dropRow(id) {
-  rows = rows.filter((r) => r.id !== id);
-  const el = listEl.querySelector(`[data-id="${id}"]`);
-  if (el) el.remove();
-  if (!rows.length) render();
-  if (tab === "liked") $("#latercount").textContent = `${rows.length} liked track${rows.length === 1 ? "" : "s"}`;
-}
-
 async function toggleLike(t) {
   const like = t.rating !== "liked";
   await patch(t.id, { rating: like ? "liked" : "unrated" });
   t.rating = like ? "liked" : "unrated";
-  if ((tab === "new" && like) || (tab === "liked" && !like)) dropRow(t.id);
-  else render();
+  if ((tab === "new" && like) || (tab === "liked" && !like)) rows = rows.filter((r) => r.id !== t.id);
+  render();
+  updatePlayerActions();
 }
 async function toggleHide(t) {
   const hide = t.rating !== "hidden";
   await patch(t.id, { rating: hide ? "hidden" : "unrated" });
   t.rating = hide ? "hidden" : "unrated";
-  if (hide) dropRow(t.id); else render();
+  if (hide) rows = rows.filter((r) => r.id !== t.id);
+  render();
+  updatePlayerActions();
+}
+async function hideRelease(key) {
+  const group = rows.filter((r) => releaseKey(r) === key);
+  if (!group.length) return;
+  const col = group[0].bandcamp_release_url === key ? "bandcamp_release_url" : "bandcamp_track_url";
+  await api(`/tracks?${col}=eq.${encodeURIComponent(key)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify({ rating: "hidden" }),
+  });
+  for (const t of group) t.rating = "hidden";
+  rows = rows.filter((r) => releaseKey(r) !== key);
+  render();
+  updatePlayerActions();
 }
 
 // ---------- playback ----------
 async function playRow(t) {
   if (current === t.id) { audio.paused ? audio.play() : audio.pause(); return; }
   current = t.id;
+  currentTrack = t;
   render();
   $("#player").hidden = false;
   $("#p-art").src = artAt(t.artwork_url, 16); // ~700px
   $("#p-title").textContent = t.title;
   $("#p-artist").textContent = t.artist || "";
-  $("#p-toggle").textContent = "…";
+  $("#p-toggle").innerHTML = ICON_SPINNER;
+  updatePlayerActions();
   try {
     let url = t.stream_url;
     // stored URL expires within ~a day — always refresh via the resolver
     const r = await fetch(`${FN}/resolve-stream?track_url=${encodeURIComponent(t.bandcamp_track_url)}`, { headers: H });
     const j = await r.json();
     if (j && j.url) url = j.url;
-    if (!url) { $("#p-title").textContent = t.title + " — not streamable"; $("#p-toggle").textContent = "▶"; return; }
+    if (!url) { $("#p-title").textContent = t.title + " — not streamable"; $("#p-toggle").innerHTML = ICON_PLAY; return; }
     audio.src = url;
     await audio.play();
   } catch (e) {
-    $("#p-toggle").textContent = "▶";
+    $("#p-toggle").innerHTML = ICON_PLAY;
     $("#p-title").textContent = t.title + " — playback error";
   }
 }
@@ -197,13 +241,33 @@ async function playRow(t) {
 function currentIndex() { return rows.findIndex((r) => r.id === current); }
 function playAt(i) { if (rows[i]) playRow(rows[i]); }
 
+function updatePlayerActions() {
+  if (!currentTrack) return;
+  const liked = currentTrack.rating === "liked";
+  const hidden = currentTrack.rating === "hidden";
+  const likeBtn = $("#p-like"), hideBtn = $("#p-hide");
+  likeBtn.innerHTML = liked ? ICON_HEART_FILLED : ICON_HEART_OUT;
+  likeBtn.classList.toggle("on-like", liked);
+  hideBtn.classList.toggle("on-later", hidden);
+  $("#p-link").href = currentTrack.bandcamp_release_url || currentTrack.bandcamp_track_url || "#";
+}
+
+$("#p-prev").innerHTML = ICON_PREV;
+$("#p-next").innerHTML = ICON_NEXT;
+$("#p-toggle").innerHTML = ICON_PLAY;
+$("#p-like").innerHTML = ICON_HEART_OUT;
+$("#p-hide").innerHTML = ICON_HIDE;
+$("#p-link").innerHTML = ICON_LINK;
+
 $("#p-toggle").onclick = () => (audio.paused ? audio.play() : audio.pause());
 $("#p-prev").onclick = () => playAt(currentIndex() - 1);
 $("#p-next").onclick = () => playAt(currentIndex() + 1);
+$("#p-like").onclick = () => currentTrack && toggleLike(currentTrack);
+$("#p-hide").onclick = () => currentTrack && toggleHide(currentTrack);
 audio.onplay = audio.onpause = () => {
-  $("#p-toggle").textContent = audio.paused ? "▶" : "⏸";
+  $("#p-toggle").innerHTML = audio.paused ? ICON_PLAY : ICON_PAUSE;
   const el = listEl.querySelector(".row.playing .play-overlay");
-  if (el) el.textContent = audio.paused ? "▶" : "⏸";
+  if (el) el.innerHTML = audio.paused ? ICON_PLAY : ICON_PAUSE;
 };
 audio.ontimeupdate = () => {
   if (!audio.duration) return;
@@ -223,7 +287,7 @@ $("#openall").onclick = () => {
 $("#copylinks").onclick = async () => {
   const urls = [...new Set(rows.map((r) => r.bandcamp_release_url || r.bandcamp_track_url).filter(Boolean))];
   await navigator.clipboard.writeText(urls.join("\n"));
-  $("#copylinks").textContent = "Copied ✓";
+  $("#copylinks").textContent = "Copied";
   setTimeout(() => ($("#copylinks").textContent = "Copy links"), 1500);
 };
 

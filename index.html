@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Bandcamp Releases</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%A7%3C/text%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="./style.css?v=2" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%234ac0f2'/%3E%3Cpath d='M5 16v-4a7 7 0 0 1 14 0v4' fill='none' stroke='%2305202b' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M18 17a1.5 1.5 0 0 0-1.5 1.5v2A1.5 1.5 0 0 0 18 22h1a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1zM6 17a1.5 1.5 0 0 1 1.5 1.5v2A1.5 1.5 0 0 1 6 22H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1z' fill='%2305202b'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="./style.css?v=3" />
 </head>
 <body>
   <header>
     <div class="wrap title-row">
-      <h1>🎧 Bandcamp Releases</h1>
+      <h1><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="logo-icon" aria-hidden="true"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="2.5" y="14" width="4" height="6" rx="1.5"/><rect x="17.5" y="14" width="4" height="6" rx="1.5"/></svg>Bandcamp Releases</h1>
       <div class="sync" id="sync">&nbsp;</div>
     </div>
     <div class="wrap stats" id="stats">&nbsp;</div>
@@ -38,11 +38,16 @@
       <div id="p-title">—</div>
       <div id="p-artist" class="muted"></div>
     </div>
-    <button id="p-prev" class="round small" title="Previous">⏮</button>
-    <button id="p-toggle" class="round">▶</button>
-    <button id="p-next" class="round small" title="Next">⏭</button>
+    <button id="p-prev" class="round small" title="Previous"></button>
+    <button id="p-toggle" class="round" title="Play / pause"></button>
+    <button id="p-next" class="round small" title="Next"></button>
     <input type="range" id="p-seek" value="0" min="0" max="1000" step="1" />
     <span id="p-time" class="muted mono">0:00</span>
+    <div class="p-actions">
+      <button id="p-like" class="round small" title="Like"></button>
+      <button id="p-hide" class="round small" title="Hide"></button>
+      <a id="p-link" class="round small icon-link" title="Open on Bandcamp" href="#" target="_blank" rel="noopener"></a>
+    </div>
     <audio id="audio" preload="none"></audio>
   </footer>
 

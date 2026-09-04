@@ -27,8 +27,9 @@ header {
   background: linear-gradient(var(--bg) 70%, transparent);
   padding-top: 14px;
 }
-header .title-row { display: flex; align-items: baseline; justify-content: space-between; }
-h1 { font-size: 18px; font-weight: 650; letter-spacing: .2px; }
+header .title-row { display: flex; align-items: center; justify-content: space-between; }
+h1 { font-size: 18px; font-weight: 650; letter-spacing: .2px; display: flex; align-items: center; gap: 8px; }
+.logo-icon { width: 20px; height: 20px; color: var(--accent); flex: none; }
 .sync { font-size: 12px; color: var(--muted); }
 
 .stats { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
@@ -54,6 +55,19 @@ h1 { font-size: 18px; font-weight: 650; letter-spacing: .2px; }
 .bar button.ghost { margin-left: 0; background: transparent; color: var(--muted); border: 1px solid var(--border); }
 
 .list { list-style: none; margin-top: 10px; }
+
+.group-header { list-style: none; }
+.gh-title {
+  all: unset; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; width: 100%; margin-top: 14px; padding: 8px 8px 6px;
+  color: var(--muted); font-size: 12px; font-weight: 650; letter-spacing: .2px;
+  cursor: pointer; border-radius: 8px; border-top: 1px solid var(--border);
+}
+.gh-title:hover { color: var(--text); background: var(--bg-elev); }
+.gh-title span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gh-title svg { flex: none; width: 14px; height: 14px; opacity: .55; }
+.gh-title:hover svg { opacity: 1; }
+
 .row {
   display: grid;
   grid-template-columns: 48px 1fr auto;
@@ -68,9 +82,10 @@ h1 { font-size: 18px; font-weight: 650; letter-spacing: .2px; }
 .art-wrap .play-overlay {
   position: absolute; inset: 0; margin: 0; border: 0; border-radius: 6px;
   display: grid; place-items: center; cursor: pointer;
-  background: rgba(0, 0, 0, .35); color: #fff; font-size: 15px;
+  background: rgba(0, 0, 0, .35); color: #fff;
   opacity: 0; transition: opacity .12s;
 }
+.art-wrap .play-overlay svg { width: 18px; height: 18px; }
 .art-wrap:hover .play-overlay,
 .row.playing .art-wrap .play-overlay { opacity: 1; }
 @media (hover: none) {
@@ -82,14 +97,15 @@ h1 { font-size: 18px; font-weight: 650; letter-spacing: .2px; }
 .info .t .clip { font-size: 10px; color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; margin-left: 6px; vertical-align: 1px; }
 
 .actions { display: flex; gap: 2px; }
-.actions button {
+.actions button, .icon-link {
   width: 34px; height: 34px; display: grid; place-items: center;
   background: transparent; border: 0; border-radius: 8px;
-  color: var(--muted); font-size: 15px; cursor: pointer;
+  color: var(--muted); font-size: 15px; cursor: pointer; text-decoration: none;
 }
-.actions button:hover { background: var(--bg-hover); color: var(--text); }
-.actions button.on-like { color: var(--like); }
-.actions button.on-later { color: var(--accent); }
+.actions button:hover, .icon-link:hover { background: var(--bg-hover); color: var(--text); }
+.actions button.on-like, .round.on-like { color: var(--like); }
+.actions button.on-later, .round.on-later { color: var(--accent); }
+.actions button svg, .icon-link svg { width: 16px; height: 16px; }
 
 .empty { text-align: center; color: var(--muted); padding: 40px 0; font-size: 14px; }
 
@@ -105,17 +121,24 @@ h1 { font-size: 18px; font-weight: 650; letter-spacing: .2px; }
 #p-artist { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .round {
   width: 40px; height: 40px; flex: none; border-radius: 999px;
-  background: var(--accent); color: #05202b; border: 0; font-size: 15px; cursor: pointer;
+  background: var(--accent); color: #05202b; border: 0; cursor: pointer;
+  display: grid; place-items: center;
 }
+.round svg { width: 17px; height: 17px; }
 .round.small {
-  width: 30px; height: 30px; font-size: 12px;
+  width: 30px; height: 30px;
   background: transparent; color: var(--muted); border: 1px solid var(--border);
 }
+.round.small svg { width: 14px; height: 14px; }
 .round.small:hover { color: var(--text); background: var(--bg-hover); }
 #p-seek { flex: 1; accent-color: var(--accent); }
 #p-time { font-size: 12px; flex: none; width: 40px; text-align: right; }
+.p-actions { display: flex; gap: 4px; flex: none; }
+.spinner { animation: bc-spin .8s linear infinite; }
+@keyframes bc-spin { to { transform: rotate(360deg); } }
 
-@media (max-width: 560px) {
-  .p-meta { width: 92px; }
+@media (max-width: 640px) {
+  .p-meta { width: 80px; }
   #p-time { display: none; }
+  .p-actions { display: none; }
 }
