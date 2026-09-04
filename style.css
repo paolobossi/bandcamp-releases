@@ -23,8 +23,7 @@ body {
 .muted { color: var(--muted); }
 
 header {
-  position: sticky; top: 0; z-index: 5;
-  background: linear-gradient(var(--bg) 70%, transparent);
+  background: var(--bg);
   padding-top: 14px;
 }
 header .title-row { display: flex; align-items: center; justify-content: space-between; }
