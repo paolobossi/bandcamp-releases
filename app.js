@@ -30,6 +30,7 @@ let tab = "new";
 let rows = [];
 let current = null; // currently loaded track id
 let currentTrack = null; // currently loaded track object
+let currentGhostIndex = null; // where `current` was in `rows` just before it got removed (like/hide)
 
 // ---------- data ----------
 async function api(path, opts = {}) {
@@ -63,6 +64,7 @@ async function load() {
   loadingEl.hidden = false;
   emptyEl.hidden = true;
   listEl.innerHTML = "";
+  currentGhostIndex = null; // stale once `rows` gets replaced by a fresh fetch
   try {
     const raw = await api(`/tracks?select=*&${TABS[tab].q}&order=created_at.desc&limit=1000`);
     rows = groupByRelease(raw);
@@ -182,11 +184,24 @@ function esc(s) { return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp
 function artAt(url, size) { return url ? url.replace(/_\d+\.jpg$/i, `_${size}.jpg`) : ""; }
 
 // ---------- actions ----------
+// Removing the currently-playing track from `rows` breaks id-based lookup for
+// prev/next. Before removing, remember where it *would* land so playback can
+// still step to the track that took its place instead of jumping to index 0.
+function removeFromRows(ids) {
+  const idSet = new Set(ids);
+  if (idSet.has(current)) {
+    const oldIdx = rows.findIndex((r) => r.id === current);
+    const removedBefore = rows.slice(0, oldIdx).filter((r) => idSet.has(r.id)).length;
+    currentGhostIndex = oldIdx - removedBefore;
+  }
+  rows = rows.filter((r) => !idSet.has(r.id));
+}
+
 async function toggleLike(t) {
   const like = t.rating !== "liked";
   await patch(t.id, { rating: like ? "liked" : "unrated" });
   t.rating = like ? "liked" : "unrated";
-  if ((tab === "new" && like) || (tab === "liked" && !like)) rows = rows.filter((r) => r.id !== t.id);
+  if ((tab === "new" && like) || (tab === "liked" && !like)) removeFromRows([t.id]);
   render();
   updatePlayerActions();
 }
@@ -194,7 +209,7 @@ async function toggleHide(t) {
   const hide = t.rating !== "hidden";
   await patch(t.id, { rating: hide ? "hidden" : "unrated" });
   t.rating = hide ? "hidden" : "unrated";
-  if (hide) rows = rows.filter((r) => r.id !== t.id);
+  if (hide) removeFromRows([t.id]);
   render();
   updatePlayerActions();
 }
@@ -208,7 +223,7 @@ async function patchRelease(key, rating) {
     body: JSON.stringify({ rating }),
   });
   for (const t of group) t.rating = rating;
-  if (tab !== rating) rows = rows.filter((r) => releaseKey(r) !== key);
+  if (tab !== rating) removeFromRows(group.map((t) => t.id));
   render();
   updatePlayerActions();
 }
@@ -220,6 +235,7 @@ async function playRow(t) {
   if (current === t.id) { audio.paused ? audio.play() : audio.pause(); return; }
   current = t.id;
   currentTrack = t;
+  currentGhostIndex = null;
   render();
   $("#player").hidden = false;
   $("#p-art").src = artAt(t.artwork_url, 16); // ~700px
@@ -242,7 +258,16 @@ async function playRow(t) {
   }
 }
 
-function currentIndex() { return rows.findIndex((r) => r.id === current); }
+// `currentGhostIndex` (set by removeFromRows) already points at whichever
+// track slid into the removed track's slot, i.e. the correct "next" track.
+function nextIndex() {
+  const idx = rows.findIndex((r) => r.id === current);
+  return idx > -1 ? idx + 1 : (currentGhostIndex ?? 0);
+}
+function prevIndex() {
+  const idx = rows.findIndex((r) => r.id === current);
+  return idx > -1 ? idx - 1 : (currentGhostIndex ?? 0) - 1;
+}
 function playAt(i) { if (rows[i]) playRow(rows[i]); }
 
 function updatePlayerActions() {
@@ -262,8 +287,8 @@ $("#p-like").innerHTML = ICON_HEART_OUT;
 $("#p-hide").innerHTML = ICON_HIDE;
 
 $("#p-toggle").onclick = () => (audio.paused ? audio.play() : audio.pause());
-$("#p-prev").onclick = () => playAt(currentIndex() - 1);
-$("#p-next").onclick = () => playAt(currentIndex() + 1);
+$("#p-prev").onclick = () => playAt(prevIndex());
+$("#p-next").onclick = () => playAt(nextIndex());
 $("#p-like").onclick = () => currentTrack && toggleLike(currentTrack);
 $("#p-hide").onclick = () => currentTrack && toggleHide(currentTrack);
 audio.onplay = audio.onpause = () => {
@@ -276,7 +301,7 @@ audio.ontimeupdate = () => {
   $("#p-seek").value = String(Math.round((audio.currentTime / audio.duration) * 1000));
   $("#p-time").textContent = fmtTime(audio.currentTime);
 };
-audio.onended = () => playAt(currentIndex() + 1);
+audio.onended = () => playAt(nextIndex());
 $("#p-seek").oninput = () => { if (audio.duration) audio.currentTime = (Number($("#p-seek").value) / 1000) * audio.duration; };
 function fmtTime(s) { s = Math.floor(s || 0); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; }
 
