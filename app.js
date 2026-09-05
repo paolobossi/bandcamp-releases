@@ -95,6 +95,7 @@ function render() {
   listEl.innerHTML = "";
   $("#hiddenbar").hidden = tab !== "hidden" || rows.length === 0;
   if (tab === "hidden") $("#hiddencount").textContent = `${rows.length} hidden track${rows.length === 1 ? "" : "s"}`;
+  updateStats();
 
   if (!rows.length) {
     emptyEl.textContent = TABS[tab].empty;
@@ -325,7 +326,6 @@ $("#deleteall").onclick = async () => {
   removeFromRows(ids);
   render();
   updatePlayerActions();
-  showStats();
 };
 
 // ---------- tabs + header stats ----------
@@ -337,12 +337,13 @@ $("#tabs").onclick = (e) => {
   load();
 };
 
-async function showStats() {
-  try {
-    const all = await api(`/tracks?select=bandcamp_release_url,bandcamp_track_url`);
-    const releases = new Set(all.map((r) => r.bandcamp_release_url || r.bandcamp_track_url));
-    $("#stats").textContent = `${all.length} track${all.length === 1 ? "" : "s"} from ${releases.size} release${releases.size === 1 ? "" : "s"}`;
-  } catch { /* ignore */ }
+// Live count of what's left in the *current* tab — recomputed from `rows`
+// on every render() so it updates instantly as you like/hide tracks.
+function updateStats() {
+  const releases = new Set(rows.map((r) => releaseKey(r)));
+  const label = tab === "new" ? "left to review" : tab === "liked" ? "liked" : "hidden";
+  $("#stats").textContent =
+    `${rows.length} track${rows.length === 1 ? "" : "s"} from ${releases.size} release${releases.size === 1 ? "" : "s"} ${label}`;
 }
 
 async function showSync() {
@@ -356,5 +357,4 @@ async function showSync() {
 }
 
 load();
-showStats();
 showSync();
