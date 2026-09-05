@@ -26,6 +26,7 @@ const TABS = {
   liked:  { q: "rating=eq.liked",   empty: "Nothing liked yet." },
   hidden: { q: "rating=eq.hidden",  empty: "Nothing hidden." },
 };
+const TAB_RATING = { new: "unrated", liked: "liked", hidden: "hidden" };
 let tab = "new";
 let rows = [];
 let current = null; // currently loaded track id
@@ -124,6 +125,7 @@ function render() {
         gactions.append(
           btn(ICON_HEART_OUT, "Like this entire release", () => likeRelease(key)),
           btn(ICON_HIDE, "Hide this entire release", () => hideRelease(key)),
+          link(ICON_LINK, "Open on Bandcamp", t.bandcamp_release_url || t.bandcamp_track_url),
         );
         header.append(spacer, gtitle, gactions);
         listEl.append(header);
@@ -219,7 +221,10 @@ async function patchRelease(key, rating) {
   const group = rows.filter((r) => releaseKey(r) === key);
   if (!group.length) return;
   const col = group[0].bandcamp_release_url === key ? "bandcamp_release_url" : "bandcamp_track_url";
-  await api(`/tracks?${col}=eq.${encodeURIComponent(key)}`, {
+  // Scope to the rating currently shown in this tab, so a track rated
+  // differently elsewhere (e.g. already liked) is never clobbered by a
+  // bulk release action taken from another tab.
+  await api(`/tracks?${col}=eq.${encodeURIComponent(key)}&rating=eq.${TAB_RATING[tab]}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
     body: JSON.stringify({ rating }),

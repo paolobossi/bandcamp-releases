@@ -62,12 +62,10 @@ h1 { font-size: 18px; font-weight: 650; letter-spacing: .2px; display: flex; ali
   margin-top: 14px; padding: 15px 8px 8px;
   border-top: 1px solid var(--border); border-radius: 10px;
 }
-.group-header:hover { background: var(--bg-elev); }
 .gh-title {
   min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   color: var(--muted); font-size: 12px; font-weight: 650; letter-spacing: .2px;
 }
-.group-header:hover .gh-title { color: var(--text); }
 
 .row {
   display: grid;
