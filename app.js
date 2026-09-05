@@ -92,6 +92,8 @@ function fmtDate(d) {
 
 function render() {
   listEl.innerHTML = "";
+  $("#hiddenbar").hidden = tab !== "hidden" || rows.length === 0;
+  if (tab === "hidden") $("#hiddencount").textContent = `${rows.length} hidden track${rows.length === 1 ? "" : "s"}`;
 
   if (!rows.length) {
     emptyEl.textContent = TABS[tab].empty;
@@ -304,6 +306,22 @@ audio.ontimeupdate = () => {
 audio.onended = () => playAt(nextIndex());
 $("#p-seek").oninput = () => { if (audio.duration) audio.currentTime = (Number($("#p-seek").value) / 1000) * audio.duration; };
 function fmtTime(s) { s = Math.floor(s || 0); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; }
+
+// ---------- hidden-tab cleanup ----------
+$("#deleteall").onclick = async () => {
+  if (!rows.length) return;
+  const ids = rows.map((r) => r.id);
+  const n = ids.length;
+  if (!confirm(`Permanently delete ${n} hidden track${n === 1 ? "" : "s"} from the database? This can't be undone.`)) return;
+  await api(`/tracks?id=in.(${ids.join(",")})`, {
+    method: "DELETE",
+    headers: { Prefer: "return=minimal" },
+  });
+  removeFromRows(ids);
+  render();
+  updatePlayerActions();
+  showStats();
+};
 
 // ---------- tabs + header stats ----------
 $("#tabs").onclick = (e) => {
